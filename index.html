@@ -225,6 +225,8 @@
   .option.wrong { border-color: var(--red); background: rgba(226,87,61,0.10); }
   .option.wrong .letter { background: var(--red); border-color: var(--red); color: #2a0a04; }
   .option[disabled] { cursor: default; }
+  .option.display-only { cursor: default; }
+  .option.display-only:hover { border-color: var(--card-border); }
   .option .letter svg { width: 13px; height: 13px; }
 
   .you-badge {
@@ -357,8 +359,10 @@
           <cite>2 Timóteo 3:16-17 — NVI</cite>
         </div>
         <div class="btn-row">
-          <button class="btn btn-primary" id="btnStart">Começar quiz</button>
+          <button class="btn btn-primary" id="btnStartPresenter">🎤 Sou o apresentador</button>
+          <button class="btn btn-ghost" id="btnStartRespondent">🙋 Vou responder</button>
         </div>
+        <p class="footnote">O apresentador conduz o quiz e acompanha o percentual de acerto da igreja em cada pergunta. Quem responde só registra a resposta — sem ver o gabarito nem o placar.</p>
         <p class="footnote" id="modeNote"></p>
       </div>
     </section>
@@ -370,9 +374,19 @@
       <div class="options" id="qOptions"></div>
       <div class="btn-row">
         <button class="btn btn-primary" id="btnConfirm" disabled>Confirmar resposta</button>
-        <button class="btn btn-ghost" id="btnSkip">Avançar sem responder</button>
+        <button class="btn btn-primary" id="btnPresenterReveal" style="display:none;">Ver resultado da igreja</button>
       </div>
-      <p class="footnote">Está apresentando? Use "Avançar sem responder" para ver só o resultado da plateia.</p>
+    </section>
+
+    <!-- ANSWERED (respondent only — no gabarito, no placar) -->
+    <section class="screen" id="screen-answered">
+      <div class="reveal">
+        <div class="gauge-sub" style="font-size:15px; margin-top:60px;">✓ Resposta registrada</div>
+        <p class="footnote" style="margin-top:10px;">Aguarde a próxima pergunta ser exibida na tela do apresentador.</p>
+        <div class="btn-row" style="width:100%; margin-top:26px;">
+          <button class="btn btn-primary" id="btnAnsweredNext">Próxima pergunta</button>
+        </div>
+      </div>
     </section>
 
     <!-- REVEAL -->
@@ -421,35 +435,44 @@
     <section class="screen" id="screen-final">
       <div class="final">
         <div class="q-eyebrow">RESULTADO FINAL</div>
-        <div class="gauge-wrap">
-          <svg viewBox="0 0 300 178" width="100%" id="gaugeSvgFinal">
-            <path d="M 30 150 A 120 120 0 0 0 270 150" fill="none" stroke="#2A3355" stroke-width="20" stroke-linecap="round" pathLength="100"></path>
-            <path d="M 30 150 A 120 120 0 0 0 270 150" fill="none" stroke="#4FAE7C" stroke-width="20" stroke-linecap="round" pathLength="100" stroke-dasharray="33.33 66.67" stroke-dashoffset="0"></path>
-            <path d="M 30 150 A 120 120 0 0 0 270 150" fill="none" stroke="#E7B23F" stroke-width="20" pathLength="100" stroke-dasharray="33.34 66.66" stroke-dashoffset="-33.33"></path>
-            <path d="M 30 150 A 120 120 0 0 0 270 150" fill="none" stroke="#E2573D" stroke-width="20" stroke-linecap="round" pathLength="100" stroke-dasharray="33.33 66.67" stroke-dashoffset="-66.67"></path>
-            <g fill="#9BA2BE" font-size="10.5" font-family="Inter, sans-serif" text-anchor="middle">
-              <text x="8" y="150" dominant-baseline="middle">0</text>
-              <text x="14.9" y="106.1" dominant-baseline="middle">10</text>
-              <text x="35.1" y="66.5" dominant-baseline="middle">20</text>
-              <text x="66.5" y="35.1" dominant-baseline="middle">30</text>
-              <text x="106.1" y="14.9" dominant-baseline="middle">40</text>
-              <text x="150" y="8" dominant-baseline="middle">50</text>
-              <text x="193.9" y="14.9" dominant-baseline="middle">60</text>
-              <text x="233.5" y="35.1" dominant-baseline="middle">70</text>
-              <text x="264.9" y="66.5" dominant-baseline="middle">80</text>
-              <text x="285.1" y="106.1" dominant-baseline="middle">90</text>
-              <text x="292" y="150" dominant-baseline="middle">100</text>
-            </g>
-            <g id="needleGroupFinal" style="transform-origin: 150px 150px; transform: rotate(-90deg);">
-              <polygon points="150,38 147.3,150 152.7,150" fill="#E8934A"></polygon>
-              <circle cx="150" cy="150" r="10" fill="#CBD0DE" stroke="#8890A6" stroke-width="1.5"></circle>
-              <circle cx="150" cy="150" r="4" fill="#5B6178"></circle>
-            </g>
-          </svg>
-          <div class="value-box"><span id="gaugePctFinal">0</span><span class="value-box-pct">%</span></div>
+
+        <div id="finalPresenterView">
+          <div class="gauge-wrap">
+            <svg viewBox="0 0 300 178" width="100%" id="gaugeSvgFinal">
+              <path d="M 30 150 A 120 120 0 0 0 270 150" fill="none" stroke="#2A3355" stroke-width="20" stroke-linecap="round" pathLength="100"></path>
+              <path d="M 30 150 A 120 120 0 0 0 270 150" fill="none" stroke="#4FAE7C" stroke-width="20" stroke-linecap="round" pathLength="100" stroke-dasharray="33.33 66.67" stroke-dashoffset="0"></path>
+              <path d="M 30 150 A 120 120 0 0 0 270 150" fill="none" stroke="#E7B23F" stroke-width="20" pathLength="100" stroke-dasharray="33.34 66.66" stroke-dashoffset="-33.33"></path>
+              <path d="M 30 150 A 120 120 0 0 0 270 150" fill="none" stroke="#E2573D" stroke-width="20" stroke-linecap="round" pathLength="100" stroke-dasharray="33.33 66.67" stroke-dashoffset="-66.67"></path>
+              <g fill="#9BA2BE" font-size="10.5" font-family="Inter, sans-serif" text-anchor="middle">
+                <text x="8" y="150" dominant-baseline="middle">0</text>
+                <text x="14.9" y="106.1" dominant-baseline="middle">10</text>
+                <text x="35.1" y="66.5" dominant-baseline="middle">20</text>
+                <text x="66.5" y="35.1" dominant-baseline="middle">30</text>
+                <text x="106.1" y="14.9" dominant-baseline="middle">40</text>
+                <text x="150" y="8" dominant-baseline="middle">50</text>
+                <text x="193.9" y="14.9" dominant-baseline="middle">60</text>
+                <text x="233.5" y="35.1" dominant-baseline="middle">70</text>
+                <text x="264.9" y="66.5" dominant-baseline="middle">80</text>
+                <text x="285.1" y="106.1" dominant-baseline="middle">90</text>
+                <text x="292" y="150" dominant-baseline="middle">100</text>
+              </g>
+              <g id="needleGroupFinal" style="transform-origin: 150px 150px; transform: rotate(-90deg);">
+                <polygon points="150,38 147.3,150 152.7,150" fill="#E8934A"></polygon>
+                <circle cx="150" cy="150" r="10" fill="#CBD0DE" stroke="#8890A6" stroke-width="1.5"></circle>
+                <circle cx="150" cy="150" r="4" fill="#5B6178"></circle>
+              </g>
+            </svg>
+            <div class="value-box"><span id="gaugePctFinal">0</span><span class="value-box-pct">%</span></div>
+          </div>
+          <h2>Resultado da igreja</h2>
+          <p class="final-sub" id="finalSub"></p>
         </div>
-        <h2 id="finalHeadline">Resultado da igreja</h2>
-        <p class="final-sub" id="finalSub"></p>
+
+        <div id="finalRespondentView" style="display:none;">
+          <h2>Obrigado por participar! 🙏</h2>
+          <p class="final-sub">Suas respostas foram registradas. Acompanhe o resultado final com o apresentador.</p>
+        </div>
+
         <div class="verse">
           "Que a autoridade das Escrituras sempre prevaleça sobre as tradições dos homens!"
         </div>
@@ -588,9 +611,9 @@
 
   // ---------------- state ----------------
   var state = {
+    role: null,          // "presenter" | "respondent"
     idx: -1,
     selected: null,
-    answered: [],       // {correct: bool}
     db: null,
     userId: null,
     sharedMode: false
@@ -603,16 +626,19 @@
     screens: {
       intro: document.getElementById("screen-intro"),
       question: document.getElementById("screen-question"),
+      answered: document.getElementById("screen-answered"),
       reveal: document.getElementById("screen-reveal"),
       final: document.getElementById("screen-final")
     },
-    btnStart: document.getElementById("btnStart"),
+    btnStartPresenter: document.getElementById("btnStartPresenter"),
+    btnStartRespondent: document.getElementById("btnStartRespondent"),
     modeNote: document.getElementById("modeNote"),
     qEyebrow: document.getElementById("qEyebrow"),
     qPrompt: document.getElementById("qPrompt"),
     qOptions: document.getElementById("qOptions"),
     btnConfirm: document.getElementById("btnConfirm"),
-    btnSkip: document.getElementById("btnSkip"),
+    btnPresenterReveal: document.getElementById("btnPresenterReveal"),
+    btnAnsweredNext: document.getElementById("btnAnsweredNext"),
     revealStatus: document.getElementById("revealStatus"),
     gaugePct: document.getElementById("gaugePct"),
     gaugeSub: document.getElementById("gaugeSub"),
@@ -623,6 +649,8 @@
     gaugePctFinal: document.getElementById("gaugePctFinal"),
     needleGroupFinal: document.getElementById("needleGroupFinal"),
     finalSub: document.getElementById("finalSub"),
+    finalPresenterView: document.getElementById("finalPresenterView"),
+    finalRespondentView: document.getElementById("finalRespondentView"),
     btnRestart: document.getElementById("btnRestart")
   };
 
@@ -665,7 +693,7 @@
       } catch (e) {
         state.db = null;
         state.sharedMode = false;
-        el.modeNote.textContent = "Não foi possível conectar ao Firebase — verifique as credenciais no código. Mostrando apenas o seu resultado a cada pergunta.";
+        el.modeNote.textContent = "Não foi possível conectar ao Firebase — verifique as credenciais no código.";
       }
     } else {
       state.db = null;
@@ -681,25 +709,33 @@
     el.qEyebrow.textContent = "PERGUNTA " + (state.idx + 1);
     el.qPrompt.textContent = q.prompt;
     el.qOptions.innerHTML = "";
+
+    var isPresenter = state.role === "presenter";
+    el.btnConfirm.style.display = isPresenter ? "none" : "";
+    el.btnPresenterReveal.style.display = isPresenter ? "" : "none";
     el.btnConfirm.disabled = true;
-    el.btnSkip.disabled = false;
+    el.btnPresenterReveal.disabled = false;
 
     LETTERS.forEach(function (letter) {
       var btn = document.createElement("button");
-      btn.className = "option";
+      btn.className = "option" + (isPresenter ? " display-only" : "");
       btn.type = "button";
       btn.dataset.letter = letter;
       btn.innerHTML =
         '<span class="letter">' + letter + '</span><span class="opt-text"></span>';
       btn.querySelector(".opt-text").textContent = q.options[letter];
-      btn.addEventListener("click", function () {
-        if (btn.disabled) return;
-        state.selected = letter;
-        Array.prototype.forEach.call(el.qOptions.children, function (c) {
-          c.classList.toggle("selected", c === btn);
+      if (isPresenter) {
+        btn.disabled = true;
+      } else {
+        btn.addEventListener("click", function () {
+          if (btn.disabled) return;
+          state.selected = letter;
+          Array.prototype.forEach.call(el.qOptions.children, function (c) {
+            c.classList.toggle("selected", c === btn);
+          });
+          el.btnConfirm.disabled = false;
         });
-        el.btnConfirm.disabled = false;
-      });
+      }
       el.qOptions.appendChild(btn);
     });
 
@@ -707,20 +743,10 @@
     showScreen("question");
   }
 
-  async function submitAndReveal() {
+  // -------- respondent: answer, no gabarito, no placar --------
+  async function submitAnswerRespondent() {
     var q = QUESTIONS[state.idx];
     var isCorrect = state.selected === q.correct;
-    state.answered[state.idx] = { correct: isCorrect };
-
-    // lock options, show correctness on the personal card
-    Array.prototype.forEach.call(el.qOptions.children, function (c) {
-      c.disabled = true;
-      var letter = c.dataset.letter;
-      if (letter === q.correct) c.classList.add("correct");
-      if (letter === state.selected && letter !== q.correct) c.classList.add("wrong");
-    });
-
-    var stats = { total: 0, correct: 0 };
 
     if (state.sharedMode && state.db) {
       try {
@@ -731,26 +757,33 @@
           correct: isCorrect,
           ts: Date.now()
         });
-        stats = await fetchQuestionStats(state.idx);
       } catch (e) {
-        // fall back silently to personal-only stats
-        stats.total = 1;
-        stats.correct = isCorrect ? 1 : 0;
+        // registration failed silently — respondent still proceeds
       }
-    } else {
-      stats.total = 1;
-      stats.correct = isCorrect ? 1 : 0;
     }
 
-    goToReveal(stats, isCorrect, q);
+    updateProgress();
+    showScreen("answered");
+    el.btnAnsweredNext.textContent = state.idx === QUESTIONS.length - 1 ? "Concluir" : "Próxima pergunta";
   }
 
-  async function skipAndReveal() {
+  function respondentNext() {
+    if (state.idx === QUESTIONS.length - 1) {
+      showScreen("final");
+      el.finalPresenterView.style.display = "none";
+      el.finalRespondentView.style.display = "";
+      updateProgress();
+      return;
+    }
+    state.idx += 1;
+    renderQuestion();
+  }
+
+  // -------- presenter: reveal the church's aggregate result --------
+  async function presenterReveal() {
     var q = QUESTIONS[state.idx];
 
-    // presenter view: only mark the correct option, nothing was picked
     Array.prototype.forEach.call(el.qOptions.children, function (c) {
-      c.disabled = true;
       if (c.dataset.letter === q.correct) c.classList.add("correct");
     });
 
@@ -763,7 +796,7 @@
       }
     }
 
-    goToReveal(stats, null, q);
+    goToReveal(stats, q);
   }
 
   async function fetchQuestionStats(idx) {
@@ -826,7 +859,7 @@
     await tween(group, pctEl, overshoot, finalPct, 1000, easeInOutCubic);
   }
 
-  async function goToReveal(stats, isCorrect, q) {
+  async function goToReveal(stats, q) {
     showScreen("reveal");
     el.revealStatus.style.display = "block";
     el.revealStatus.innerHTML = "Reunindo as respostas da igreja<span class=\"dots\"></span>";
@@ -834,7 +867,7 @@
     el.revealYou.classList.remove("show");
     el.btnNext.disabled = true;
     setNeedle(el.needleGroup, el.gaugePct, 0);
-    el.gaugeSub.textContent = state.sharedMode ? "da igreja acertou esta pergunta" : "resultado desta pergunta";
+    el.gaugeSub.textContent = state.sharedMode ? "da igreja acertou esta pergunta" : "sem estatísticas compartilhadas";
 
     var finalPct = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
     var prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -846,30 +879,20 @@
     el.revealStatus.style.display = "none";
     el.revealLine.textContent = state.sharedMode
       ? finalPct + "% da igreja acertou esta pergunta"
-      : (isCorrect === null ? "Nenhuma resposta compartilhada disponível." : (isCorrect ? "Você acertou esta pergunta." : "Você errou esta pergunta."));
+      : "Configure o Firebase para ver o placar da igreja.";
     el.revealLine.classList.add("show");
 
-    if (state.sharedMode) {
-      var respondedWord = stats.total === 1 ? "pessoa respondeu" : "pessoas responderam";
-      if (isCorrect === null) {
-        el.revealYou.innerHTML = stats.total + " " + respondedWord + " até agora — resposta certa: " + q.correct.toUpperCase();
-      } else {
-        el.revealYou.innerHTML =
-          stats.total + " " + respondedWord + " até agora — você " +
-          (isCorrect
-            ? '<span class="you-correct">acertou</span>'
-            : '<span class="you-wrong">errou</span>' + " (resposta certa: " + q.correct.toUpperCase() + ")");
-      }
-    } else {
-      el.revealYou.textContent = isCorrect === null || isCorrect ? "" : "Resposta certa: " + q.correct.toUpperCase();
-    }
+    var respondedWord = stats.total === 1 ? "pessoa respondeu" : "pessoas responderam";
+    el.revealYou.innerHTML = state.sharedMode
+      ? stats.total + " " + respondedWord + " — resposta certa: " + q.correct.toUpperCase()
+      : "Resposta certa: " + q.correct.toUpperCase();
     el.revealYou.classList.add("show");
 
     el.btnNext.disabled = false;
     el.btnNext.textContent = state.idx === QUESTIONS.length - 1 ? "Ver resultado final" : "Próxima pergunta";
   }
 
-  async function goNext() {
+  async function presenterNext() {
     if (state.idx === QUESTIONS.length - 1) {
       await showFinal();
       return;
@@ -881,8 +904,9 @@
   async function showFinal() {
     updateProgress();
     showScreen("final");
+    el.finalPresenterView.style.display = "";
+    el.finalRespondentView.style.display = "none";
     setNeedle(el.needleGroupFinal, el.gaugePctFinal, 0);
-    document.getElementById("finalHeadline").textContent = "Resultado da igreja";
 
     var stats = { total: 0, correct: 0 };
 
@@ -895,53 +919,47 @@
           if (data && data.correct) stats.correct += 1;
         });
       } catch (e) {
-        stats = localTally();
+        stats = { total: 0, correct: 0 };
       }
-    } else {
-      stats = localTally();
     }
 
     var finalPct = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
     el.finalSub.textContent = state.sharedMode
       ? finalPct + "% de acertos em " + stats.total + " respostas de toda a igreja"
-      : "Você acertou " + stats.correct + " de " + stats.total + " perguntas";
+      : "Configure o Firebase para ver o placar da igreja.";
 
     var prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     await new Promise(function (r) { setTimeout(r, 400); });
     await suspenseSweep(el.needleGroupFinal, el.gaugePctFinal, finalPct, prefersReduced);
   }
 
-  function localTally() {
-    var total = 0, correct = 0;
-    state.answered.forEach(function (a) {
-      if (!a) return;
-      total += 1;
-      if (a.correct) correct += 1;
-    });
-    return { total: total, correct: correct };
-  }
-
   // ---------------- wiring ----------------
-  el.btnStart.addEventListener("click", function () {
+  el.btnStartPresenter.addEventListener("click", function () {
+    state.role = "presenter";
+    state.idx = 0;
+    renderQuestion();
+  });
+  el.btnStartRespondent.addEventListener("click", function () {
+    state.role = "respondent";
     state.idx = 0;
     renderQuestion();
   });
   el.btnConfirm.addEventListener("click", function () {
     if (!state.selected) return;
     el.btnConfirm.disabled = true;
-    el.btnSkip.disabled = true;
-    submitAndReveal();
+    submitAnswerRespondent();
   });
-  el.btnSkip.addEventListener("click", function () {
-    el.btnConfirm.disabled = true;
-    el.btnSkip.disabled = true;
-    skipAndReveal();
+  el.btnPresenterReveal.addEventListener("click", function () {
+    el.btnPresenterReveal.disabled = true;
+    presenterReveal();
   });
-  el.btnNext.addEventListener("click", goNext);
+  el.btnAnsweredNext.addEventListener("click", respondentNext);
+  el.btnNext.addEventListener("click", presenterNext);
   el.btnRestart.addEventListener("click", function () {
-    state.idx = 0;
-    state.answered = [];
-    renderQuestion();
+    state.role = null;
+    state.idx = -1;
+    updateProgress();
+    showScreen("intro");
   });
 
   initCapabilities();
